@@ -6,13 +6,19 @@
 #define CACHE_H
 
 
+#include <map>
+
 class Cache {
 private:
     char * buffer;
+    std::map<const char*,int> fileIDs;
+
 
 public:
     Cache(int blocks_num);
     virtual ~Cache();
+    void addFile(const char *filePath, int id);
+    const char* getFilePath(int fileID);
 
 };
 

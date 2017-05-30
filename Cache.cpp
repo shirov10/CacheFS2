@@ -5,6 +5,8 @@
 #include "Cache.h"
 #include <sys/stat.h>
 
+#include <cstdlib> //for realpath
+
 
 //region Cache
 
@@ -15,10 +17,26 @@ Cache::Cache(int blocks_num) {
     int blksize = fi.st_blksize;
 
     buffer= new char[blocks_num*blksize];
+
 }
 
 Cache::~Cache() {
     delete buffer;
+//    for(auto it=fileIDs.begin();it!=fileIDs.end();++it){ //frees the memory that was allocated with malloc
+//        free((char*)it->first);
+//    }
+}
+
+void Cache::addFile(const char *filePath, int id) {
+    fileIDs[filePath]=id;
+}
+
+const char * Cache::getFilePath(int fileID) {
+    for (auto it=fileIDs.begin();it!=fileIDs.end();++it){
+        if (it->second==fileID)
+            return it->first;
+    }
+    return nullptr;
 }
 
 

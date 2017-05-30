@@ -6,9 +6,15 @@
 #include "Cache.h"
 #include <iostream>
 
-#include <sys/types.h>
+//for open
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
+
+//for close
+#include <unistd.h>
+
+
 
 static Cache *_cache;
 
@@ -49,13 +55,21 @@ int CacheFS_destroy(){
 
 
 int CacheFS_open(const char *pathname){
-
-    if(open(pathname,O_RDONLY | O_DIRECT | O_SYNC)==-1){
+    int id=open(pathname,O_RDONLY | O_DIRECT | O_SYNC);
+    if(id<0){      //TODO we should support only files under "/tmp"!
         return -1;
     }
-
-
-    return 0;
-
+    _cache->addFile(pathname,id);
+    return id;
 }
 
+int CacheFS_close(int file_id){
+    if(close(file_id)!=0){
+        return -1;
+    }
+    return 0;
+}
+
+int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
+
+}
