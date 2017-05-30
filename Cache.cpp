@@ -7,6 +7,8 @@
 
 #include <cstdlib> //for realpath
 
+#include <string.h> //for memcpy
+
 
 //region Cache
 
@@ -14,9 +16,9 @@ Cache::Cache(int blocks_num) {
     //get the block size
     struct stat fi;
     stat("/tmp", &fi);
-    int blksize = fi.st_blksize;
+    blockSize = fi.st_blksize;
 
-    buffer= new char[blocks_num*blksize];
+    buffer= new char[blocks_num*blockSize];
 
 }
 
@@ -28,15 +30,52 @@ Cache::~Cache() {
 }
 
 void Cache::addFile(const char *filePath, int id) {
-    fileIDs[filePath]=id;
+    fileIDs[id]=filePath;
 }
 
-const char * Cache::getFilePath(int fileID) {
-    for (auto it=fileIDs.begin();it!=fileIDs.end();++it){
-        if (it->second==fileID)
-            return it->first;
+void Cache::removeFile(int id) {
+    fileIDs.erase(id);
+
+}
+
+const char* Cache::getRealPath(int file_id) {
+    return realpath(fileIDs[file_id], NULL);
+}
+
+int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
+
+    if(fileIDs.count(file_id)==0){//meaning the file is not open
+        return -1;
     }
-    return nullptr;
+
+    //calculate the wanted blocks
+    int firstBlock, lastBlock;
+    firstBlock=(int)offset/blockSize;
+    lastBlock=((int)offset+(int)count)/blockSize;
+
+    //Get the real path of the given file
+    const char * realPath=getRealPath(file_id);
+
+    int alreadyCopied=0, blockNumInCache,bytesToCopy;
+
+    //search for the blocks in the cache
+    for (int i = firstBlock; i <= lastBlock; ++i) {
+        auto it=filesInfo.find(realPath);
+        if(it!=filesInfo.end() && it->second.count(i)!=0){ //meaning the block i is in the cache
+
+            blockNumInCache=it->second.find(i)->second; //The block number in the cache buffer
+
+            bytesToCopy=(i!=lastBlock)? blockSize:((int)count)%blockSize; //How much bytes to copy TODO take care of end of file!
+
+            //copy memory from the cache to the buffer
+            memcpy(buf+alreadyCopied,&buffer[blockNumInCache],bytesToCopy);
+            alreadyCopied+=bytesToCopy;
+        }
+        else{ //The block is not in the cache
+
+        }
+    }
+
 }
 
 

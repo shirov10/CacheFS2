@@ -67,9 +67,12 @@ int CacheFS_close(int file_id){
     if(close(file_id)!=0){
         return -1;
     }
+    _cache->removeFile(file_id);
     return 0;
 }
 
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 
 }
+
+

@@ -7,20 +7,34 @@
 
 
 #include <map>
+#include <list>
+
 
 class Cache {
+
+//protected:
+//    struct cacheFileInfo{int blockNumInFile; int offsetInCache;};
+
 private:
+    int blockSize; //TODO add const maybe?
     char * buffer;
-    std::map<const char*,int> fileIDs;
+    std::map<int,const char*> fileIDs;
+    std::map<const char*,std::map<int,int>> filesInfo; // a map of pairs <path, map>, such that this is a map of pairs <block number in file, block number in cache>
+
+    const char* getRealPath(int file_id);
+
+
 
 
 public:
     Cache(int blocks_num);
     virtual ~Cache();
     void addFile(const char *filePath, int id);
-    const char* getFilePath(int fileID);
+    void removeFile(int id);
+    int readFile(int file_id, void *buf, size_t count, off_t offset);
 
 };
+
 
 class Cache_LRU : public Cache{
 private:
