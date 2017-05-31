@@ -9,6 +9,16 @@
 
 #include <string.h> //for memcpy
 
+// region Block
+
+Block::Block(int blockSize) {
+    content=new char[blockSize];
+}
+
+
+//endregion
+
+
 
 //region Cache
 
@@ -16,14 +26,15 @@ Cache::Cache(int blocks_num) {
     //get the block size
     struct stat fi;
     stat("/tmp", &fi);
-    blockSize = fi.st_blksize;
 
-    buffer= new char[blocks_num*blockSize];
+    blocks= new Block[blocks_num](blockSize); //TODO make it a list probably?...
+
+
 
 }
 
 Cache::~Cache() {
-    delete buffer;
+    delete blocks;
     for(auto it=filesInfo.begin();it!=filesInfo.end();++it){ //frees the memory that was allocated with malloc
         free((char*)it->first);
     }
@@ -76,7 +87,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
         alreadyCopied+=bytesToCopy;
     }
 
-}
+}8
 
 
 

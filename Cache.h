@@ -10,11 +10,21 @@
 #include <list>
 
 
+struct Block{
+    const char* realPath;
+    int blockNumInFile;
+    int length;
+    char * content;
+
+    Block(int blockSize);
+};
+
+
 class Cache {
 
 protected:
     int blockSize; //TODO add const maybe?
-    char * buffer;
+    Block * blocks;
     std::map<int,const char*> fileIDs;
     std::map<const char*,std::map<int,int> > filesInfo; // a map of pairs <path, map>, such that this is a map of pairs <block number in file, block number in cache>
 
