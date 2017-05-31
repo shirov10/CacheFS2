@@ -24,9 +24,9 @@ Cache::Cache(int blocks_num) {
 
 Cache::~Cache() {
     delete buffer;
-//    for(auto it=fileIDs.begin();it!=fileIDs.end();++it){ //frees the memory that was allocated with malloc
-//        free((char*)it->first);
-//    }
+    for(auto it=filesInfo.begin();it!=filesInfo.end();++it){ //frees the memory that was allocated with malloc
+        free((char*)it->first);
+    }
 }
 
 void Cache::addFile(const char *filePath, int id) {
@@ -40,6 +40,7 @@ void Cache::removeFile(int id) {
 
 const char* Cache::getRealPath(int file_id) {
     return realpath(fileIDs[file_id], NULL);
+    // please notice that realpath is alocated using maloc, and must be freed!
 }
 
 int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
@@ -61,19 +62,18 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
     //search for the blocks in the cache
     for (int i = firstBlock; i <= lastBlock; ++i) {
         auto it=filesInfo.find(realPath);
-        if(it!=filesInfo.end() && it->second.count(i)!=0){ //meaning the block i is in the cache
+        if(it==filesInfo.end()||(it!=filesInfo.end() && it->second.count(i)==0)){ //meaning the block is not in the cache
+            //TODO cache it
 
-            blockNumInCache=it->second.find(i)->second; //The block number in the cache buffer
-
-            bytesToCopy=(i!=lastBlock)? blockSize:((int)count)%blockSize; //How much bytes to copy TODO take care of end of file!
-
-            //copy memory from the cache to the buffer
-            memcpy(buf+alreadyCopied,&buffer[blockNumInCache],bytesToCopy);
-            alreadyCopied+=bytesToCopy;
+            auto it=filesInfo.find(realPath);
         }
-        else{ //The block is not in the cache
+        blockNumInCache=it->second.find(i)->second; //The block number in the cache buffer
 
-        }
+        bytesToCopy=(i!=lastBlock)? blockSize:((int)count)%blockSize; //How much bytes to copy TODO take care of end of file!
+
+        //copy memory from the cache to the buffer
+        memcpy(buf+alreadyCopied,&buffer[blockNumInCache],bytesToCopy);
+        alreadyCopied+=bytesToCopy;
     }
 
 }
