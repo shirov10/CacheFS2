@@ -8,6 +8,7 @@
 
 #include <map>
 #include <list>
+#include <vector>
 
 
 struct Block{
@@ -24,13 +25,14 @@ class Cache {
 
 protected:
     int blockSize; //TODO add const maybe?
-    Block * blocks;
+    std::vector<Block*> blocks;
     std::map<int,const char*> fileIDs;
-    std::map<const char*,std::map<int,int> > filesInfo; // a map of pairs <path, map>, such that this is a map of pairs <block number in file, block number in cache>
+    //std::map<const char*,std::map<int,int> > filesInfo; // a map of pairs <path, map>, such that this is a map of pairs <block number in file, block number in cache>
 
     const char* getRealPath(int file_id);
     void cacheBlock(const char* path, int blockNumInFile);
     int blockNumToRemove();
+    int findBlock(const char* path, int blockNumInFile);
 
 
 

@@ -5,9 +5,11 @@
 #include "Cache.h"
 #include <sys/stat.h>
 
+
 #include <cstdlib> //for realpath
 
 #include <string.h> //for memcpy
+#include <algorithm> ///for min
 
 // region Block
 
@@ -26,17 +28,20 @@ Cache::Cache(int blocks_num) {
     //get the block size
     struct stat fi;
     stat("/tmp", &fi);
-
-    blocks= new Block[blocks_num](blockSize); //TODO make it a list probably?...
+    blocks= std::vector<Block*>(blocks_num);
+    for (int i = 0; i <(int)blocks.size(); ++i) {
+        blocks[i]=new Block(blockSize);
+    }
 
 
 
 }
 
 Cache::~Cache() {
-    delete blocks;
-    for(auto it=filesInfo.begin();it!=filesInfo.end();++it){ //frees the memory that was allocated with malloc
-        free((char*)it->first);
+
+    for(int i = 0; i <(int)blocks.size(); ++i){
+        free((char*)blocks[i]->realPath); //frees the memory that was allocated with malloc
+        delete blocks[i];
     }
 }
 
@@ -54,6 +59,18 @@ const char* Cache::getRealPath(int file_id) {
     // please notice that realpath is alocated using maloc, and must be freed!
 }
 
+/**
+ * finds the block number blockNumInFile int the cache. If it's not there- returns -1
+ */
+int Cache::findBlock(const char *path, int blockNumInFile) {
+    for (int i=0; i<(int)blocks.size();++i ){
+        if (strcmp(blocks[i]->realPath,path) && blockNumInFile==blocks[i]->blockNumInFile){
+            return i;
+        }
+    }
+    return -1;
+}
+
 int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
 
     if(fileIDs.count(file_id)==0){//meaning the file is not open
@@ -68,26 +85,28 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
     //Get the real path of the given file
     const char * realPath=getRealPath(file_id);
 
-    int alreadyCopied=0, blockNumInCache,bytesToCopy;
+    int alreadyCopied=0, blockNumInCache,bytesToCopy, offsetInBlock;
+    Block* block_ptr;
 
     //search for the blocks in the cache
     for (int i = firstBlock; i <= lastBlock; ++i) {
-        auto it=filesInfo.find(realPath);
-        if(it==filesInfo.end()||(it!=filesInfo.end() && it->second.count(i)==0)){ //meaning the block is not in the cache
+        blockNumInCache=findBlock(realPath,i);
+        if(blockNumInCache==-1){ //meaning the block is not in the cache
             //TODO cache it
 
-            auto it=filesInfo.find(realPath);
+            blockNumInCache=findBlock(realPath,i);
         }
-        blockNumInCache=it->second.find(i)->second; //The block number in the cache buffer
+        block_ptr=blocks[blockNumInCache];
+        bytesToCopy=std::min((int)count-alreadyCopied,block_ptr->length); //How much bytes to copy
 
-        bytesToCopy=(i!=lastBlock)? blockSize:((int)count)%blockSize; //How much bytes to copy TODO take care of end of file!
+        offsetInBlock=(i==firstBlock)? (int)offset%blockSize:0;
 
         //copy memory from the cache to the buffer
-        memcpy(buf+alreadyCopied,&buffer[blockNumInCache],bytesToCopy);
+        memcpy((char*)buf+alreadyCopied,blocks[blockNumInCache]->content+offsetInBlock,bytesToCopy);
         alreadyCopied+=bytesToCopy;
     }
 
-}8
+}
 
 
 

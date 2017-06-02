@@ -7,6 +7,8 @@
 #ifndef CACHEFS_H
 #define CACHEFS_H
 
+#include <stdlib.h>
+
 
 
 
