@@ -55,12 +55,7 @@ int CacheFS_destroy(){
 
 
 int CacheFS_open(const char *pathname){
-    int id=open(pathname,O_RDONLY | O_DIRECT | O_SYNC);
-    if(id<0){      //TODO we should support only files under "/tmp"!
-        return -1;
-    }
-    _cache->addFile(pathname,id);
-    return id;
+    return _cache->cach_open(pathname);
 }
 
 int CacheFS_close(int file_id){
