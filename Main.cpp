@@ -17,9 +17,8 @@ int main()
     std::cout << "file created" << std::endl;
 
     char a[100];
-    CacheFile::ufd2file_map[blob_ufd]->CachFileReadFromBlock(a, 50, 0, 0);
+    CacheFile::readFromFile(blob_ufd, a, 100, 0);
     std::cout << "block readed" << std::endl;
-
-    std::cout << a << std::endl;
+    printf("%s", a);
 
 }

@@ -41,7 +41,8 @@ private:
     /**
      * vector of all blocks - for memory management
      */
-    static std::vector<CacheBlock> _all_blocks_vector;
+    //static std::vector<CacheBlock> _all_blocks_vector;
+    static CacheBlock* _all_blocks_vector;
 
 public:
     static int initelizeBlocks(int blockSize, int blockNum);
@@ -86,7 +87,7 @@ public:
 
 class CacheFile
 {
-public:
+private:
     /**
      * the real file descriptor of the file
      */
@@ -99,7 +100,7 @@ public:
     /**
      * lengh in bytes
      */
-    long _lengh_bytes;
+    off_t _lengh_bytes;
     /**
      * lengh in blocks
      */
@@ -111,7 +112,7 @@ public:
     std::vector<CacheBlock*> _blocks;
 
     // ------------- statics ----------------------
-//public:
+public:
     /**
     * map: user fd to file (shared ptrs)
     */
@@ -124,21 +125,21 @@ public:
      *  if exists - return the shared pointer to it.
      */
     static User_file_descriptor createFile(const char* path);
-    static int readFromFile(User_file_descriptor ufd, void *buf, size_t count, off_t offset);
+    static int readFromFile(User_file_descriptor ufd, char * buf, size_t count, off_t offset);
 
     // ------------- methods ----------------------
-//private:
     /**
-     * create new CacheFile object
-     * the only method that use open()
-     */
-    CacheFile(const char* path);
-//public:
-    /**
-     * destruct CacheFile object
-     * the only method that use close()
-     */
+ * destruct CacheFile object
+ * the only method that use close()
+ */
     ~CacheFile();
+
+    /**
+ * create new CacheFile object
+ * the only method that use open()
+ */
+    CacheFile(const char* path);
+private:
     /**
      * read from file to buffer.
      * read new blocks if needed.

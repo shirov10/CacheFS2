@@ -17,7 +17,8 @@ int CacheBlock::_block_size = 0;
 int CacheBlock::_blocks_num;
 int CacheBlock::_number_of_blocks_in_use;
 std::list<int> CacheBlock::_empty_blocks_list;
-std::vector<CacheBlock> CacheBlock::_all_blocks_vector;
+//std::vector<CacheBlock> CacheBlock::_all_blocks_vector;
+CacheBlock* CacheBlock::_all_blocks_vector;
 
 
 int CacheBlock::initelizeBlocks(int blockSize, int blockNum) {
@@ -25,7 +26,8 @@ int CacheBlock::initelizeBlocks(int blockSize, int blockNum) {
     _blocks_num = blockNum;
     _number_of_blocks_in_use = 0;
 
-    _all_blocks_vector = std::vector<CacheBlock>(blockNum);
+    //_all_blocks_vector = std::vector<CacheBlock>(blockNum);
+    _all_blocks_vector = new CacheBlock[blockNum];
 
     for (int i = 0; i < blockNum; i++)
     {
@@ -43,7 +45,8 @@ CacheBlock *CacheBlock::giveMeEmptyBlockToUse() {
     assert(_blocks_num - _number_of_blocks_in_use == _empty_blocks_list.size());
     if (!_empty_blocks_list.empty())
     {
-        CacheBlock* retVal = &(_all_blocks_vector[_empty_blocks_list.front()]);
+        std::cout << "next block index is " << _empty_blocks_list.front() << std::endl;
+        CacheBlock* retVal = _all_blocks_vector+_empty_blocks_list.front();
         _empty_blocks_list.pop_front();
         _number_of_blocks_in_use++;
         return retVal;
@@ -115,8 +118,11 @@ User_file_descriptor CacheFile::createFile(const char *path) {
     return user_fd;
 }
 
-int CacheFile::readFromFile(User_file_descriptor ufd, void *buf, size_t count, off_t offset) {
-    return 0;
+int CacheFile::readFromFile(User_file_descriptor ufd, char * buf, size_t count, off_t offset)
+{
+    std::shared_ptr<CacheFile> file = ufd2file_map[ufd];
+    file->CachFileRead(buf, count, offset);
+    return 0; // TODO
 }
 
 CacheFile::CacheFile(const char *path)
@@ -157,6 +163,35 @@ CacheFile::~CacheFile() {
 
 
 int CacheFile::CachFileRead(char *buf, size_t count, off_t offset) {
+    if(offset >= this->_lengh_bytes)
+    {
+        return 0;
+    }
+
+    // if file is not long enogh
+    count = std::min((unsigned int)count, (unsigned int)(_lengh_bytes-offset));
+
+    //calculate the wanted blocks
+    int firstBlock, lastBlock;
+    firstBlock = (int)offset/CacheBlock::_block_size;
+    lastBlock = ((int)offset+(int)count)/CacheBlock::_block_size;
+
+    int readed_count = 0;
+    int blockToRead = firstBlock;
+    off_t offset_in_block = offset % CacheBlock::_block_size;
+    while (readed_count < count)
+    {
+        int last_index_to_read_in_block = std::min(CacheBlock::_block_size, (int)count - readed_count);
+
+        size_t tmp_count = last_index_to_read_in_block - offset_in_block;
+
+        CachFileReadFromBlock(buf+readed_count, tmp_count, offset_in_block, blockToRead);
+
+        offset_in_block = 0;
+        blockToRead++;
+        readed_count += tmp_count;
+    }
+
     return 0;
 }
 /**
@@ -193,7 +228,7 @@ int CacheFile::CachFileReadFromBlock(char * buf, size_t count, off_t offset, uns
         };
     }
 
-    memcpy(buf, _blocks[blockNum], count);
+    memcpy(buf, _blocks[blockNum]+offset, count);
 
     return 0; // todo
 }
