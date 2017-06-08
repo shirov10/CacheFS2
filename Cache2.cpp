@@ -13,15 +13,11 @@
 
 
 std::map<User_file_descriptor, std::shared_ptr<CacheFile> > CacheFile::ufd2file_map = std::map<User_file_descriptor, std::shared_ptr<CacheFile> >();
-int CacheBlock::_block_size = 0;
-int CacheBlock::_blocks_num;
-int CacheBlock::_number_of_blocks_in_use;
-std::list<int> CacheBlock::_empty_blocks_list;
-//std::vector<CacheBlock> CacheBlock::_all_blocks_vector;
-CacheBlock* CacheBlock::_all_blocks_vector;
 
 
-int CacheBlock::initelizeBlocks(int blockSize, int blockNum) {
+Cache2::Cache2(size_t blockSize, int blockNum){
+    CacheBlock::_block_size = blockSize;
+
     _block_size = blockSize;
     _blocks_num = blockNum;
     _number_of_blocks_in_use = 0;
@@ -33,15 +29,14 @@ int CacheBlock::initelizeBlocks(int blockSize, int blockNum) {
     {
         _empty_blocks_list.push_back(i);
     }
-
-    return 0;
 }
 
-void CacheBlock::destroyBlocks() {
-
+Cache2::~Cache2()
+{
+    delete[] _all_blocks_vector;
 }
 
-CacheBlock *CacheBlock::giveMeEmptyBlockToUse() {
+CacheBlock *Cache2::giveMeEmptyBlockToUse() {
     assert(_blocks_num - _number_of_blocks_in_use == _empty_blocks_list.size());
     if (!_empty_blocks_list.empty())
     {
@@ -61,7 +56,7 @@ CacheBlock::CacheBlock() {
     _index_in_file = -1;
     _lengh = -1;
     _file = nullptr;
-    _content = new char(_block_size);
+    _content = (char*)aligned_alloc( _block_size, _block_size );
 }
 
 CacheBlock::~CacheBlock() {
@@ -181,7 +176,7 @@ int CacheFile::CachFileRead(char *buf, size_t count, off_t offset) {
     off_t offset_in_block = offset % CacheBlock::_block_size;
     while (readed_count < count)
     {
-        int last_index_to_read_in_block = std::min(CacheBlock::_block_size, (int)count - readed_count);
+        int last_index_to_read_in_block = std::min((int)CacheBlock::_block_size, (int)count - readed_count);
 
         size_t tmp_count = last_index_to_read_in_block - offset_in_block;
 

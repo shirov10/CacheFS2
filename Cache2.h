@@ -19,41 +19,9 @@ class CacheFile;
 
 class CacheBlock
 {
-    // ------- statics - memory management --------------
-    /**
- * number of blocks
- */
-    static int _blocks_num;
-    /**
-     * block size
-     */
-public:
-    static int _block_size;
-private:
-    /**
-    * current number of full blocks
-    */
-    static int _number_of_blocks_in_use;
-    /**
-     * list of empty blocks indecies.
-     */
-    static std::list<int> _empty_blocks_list;
-    /**
-     * vector of all blocks - for memory management
-     */
-    //static std::vector<CacheBlock> _all_blocks_vector;
-    static CacheBlock* _all_blocks_vector;
-
-public:
-    static int initelizeBlocks(int blockSize, int blockNum);
-    static void destroyBlocks();
-    static CacheBlock* giveMeEmptyBlockToUse();
-    static void freeAllThosBlocks(std::list<int> blocksToSetFree);
-
-
     // ------------- not statics - block internal info -------------
 
-//private:
+public:
     /**
      * the block number in the file, start from 0.
      * also the index in the blocks vector in the file.
@@ -155,6 +123,35 @@ private:
 
 
 class Cache2 {
+
+    // ------- memory management --------------
+    /**
+    * number of blocks
+    */
+    int _blocks_num;
+    /**
+     * block size
+     */
+    int _block_size;
+    /**
+    * current number of full blocks
+    */
+    int _number_of_blocks_in_use;
+    /**
+     * list of empty blocks indecies.
+     */
+    std::list<int> _empty_blocks_list;
+    /**
+     * vector of all blocks - for memory management
+     */
+    //static std::vector<CacheBlock> _all_blocks_vector;
+    CacheBlock* _all_blocks_vector;
+
+    CacheBlock* giveMeEmptyBlockToUse();
+    void freeAllThosBlocks(std::list<int> blocksToSetFree);
+
+    Cache2(int blockSize, int blockNum);
+    ~Cache2();
 
 
 };

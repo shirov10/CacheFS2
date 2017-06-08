@@ -10,7 +10,7 @@
 int main()
 {
     std::cout << "begin" << std::endl;
-    CacheBlock::initelizeBlocks(512, 100);
+    Cache2 Manager(512, 100);
     std::cout << "blocks initelized" << std::endl;
 
     User_file_descriptor blob_ufd = CacheFile::createFile("/tmp/blob");
