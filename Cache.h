@@ -18,6 +18,9 @@ struct Block{
     char * content;
 
     Block(int blockSize);
+
+    long lastAccessTime;
+    unsigned int refCount;
 };
 
 
@@ -31,7 +34,7 @@ protected:
 
     const char* getRealPath(int file_id);
     void cacheBlock(const char* path, int blockNumInFile);
-    int blockNumToRemove();
+    std::vector<Block*>::iterator blockNumToRemove();
     int findBlock(const char* path, int blockNumInFile);
 
 
@@ -53,6 +56,8 @@ private:
 public:
     Cache_LRU(int blocks_num);
     ~Cache_LRU();
+    std::vector<Block*>::iterator blockNumToRemove();
+
 };
 
 
@@ -62,6 +67,8 @@ private:
 public:
     Cache_LFU(int blocks_num);
     ~Cache_LFU();
+    std::vector<Block*>::iterator blockNumToRemove();
+
 };
 
 class Cache_FBR : public Cache{
@@ -72,6 +79,8 @@ private:
 public:
     Cache_FBR(int blocks_num, double f_old,double f_new);
     ~Cache_FBR();
+    std::vector<Block*>::iterator blockNumToRemove();
+
 
 };
 
