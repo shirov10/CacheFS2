@@ -125,11 +125,12 @@ Cache_LRU::Cache_LRU(int blocks_num):Cache(blocks_num)
 Cache_LRU::~Cache_LRU() {
 }
 
-std::vector<Block*>::iterator Cache_LRU::blockNumToRemove()
+int Cache_LRU::blockNumToRemove()
 {
     auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime > b->lastAccessTime; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
-    return it;
+    int index = std::distance( this->blocks.begin(), it );
+    return index;
 }
 
 
@@ -143,11 +144,12 @@ Cache_LFU::Cache_LFU(int blocks_num):Cache(blocks_num){
 Cache_LFU::~Cache_LFU() {
 }
 
-std::vector<Block*>::iterator Cache_LFU::blockNumToRemove()
+int Cache_LFU::blockNumToRemove()
 {
     auto compareFunc = [](Block* a, Block* b) { return a->refCount > b->refCount; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
-    return it;
+    int index = std::distance( this->blocks.begin(), it );
+    return index;
 }
 
 
@@ -163,7 +165,7 @@ Cache_FBR::Cache_FBR(int blocks_num, double f_old,double f_new):Cache(blocks_num
 
 Cache_FBR::~Cache_FBR() {
 }
-std::vector<Block*>::iterator Cache_FBR::blockNumToRemove()
+int Cache_FBR::blockNumToRemove()
 {
 }
 

@@ -34,7 +34,7 @@ protected:
 
     const char* getRealPath(int file_id);
     void cacheBlock(const char* path, int blockNumInFile);
-    std::vector<Block*>::iterator blockNumToRemove();
+    virtual int blockNumToRemove() = 0;
     int findBlock(const char* path, int blockNumInFile);
 
 
@@ -56,7 +56,7 @@ private:
 public:
     Cache_LRU(int blocks_num);
     ~Cache_LRU();
-    std::vector<Block*>::iterator blockNumToRemove();
+    int blockNumToRemove();
 
 };
 
@@ -67,7 +67,7 @@ private:
 public:
     Cache_LFU(int blocks_num);
     ~Cache_LFU();
-    std::vector<Block*>::iterator blockNumToRemove();
+    int blockNumToRemove();
 
 };
 
@@ -79,7 +79,7 @@ private:
 public:
     Cache_FBR(int blocks_num, double f_old,double f_new);
     ~Cache_FBR();
-    std::vector<Block*>::iterator blockNumToRemove();
+    int blockNumToRemove();
 
 
 };
