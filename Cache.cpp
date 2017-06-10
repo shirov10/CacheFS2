@@ -94,6 +94,10 @@ Block* Cache::cacheBlock(int fd, const char *path, int blockNumInFile) {
     blockPtr->lastAccessTime=std::time(nullptr);
     blockPtr->length=read_bytes;
     blockPtr->blockNumInFile=blockNumInFile;
+
+    updateAfterReplaceMent(blockNumInFile);
+    updateAfterAccess(blockNumInFile);
+
     return blockPtr;
 }
 
@@ -131,6 +135,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
             block_ptr=blocks[blockNumInCache];
             block_ptr->lastAccessTime = std::time(nullptr);
             block_ptr->refCount++;
+            updateAfterAccess(blockNumInCache);
         }
 
         bytesToCopy=std::min((int)count-alreadyCopied,block_ptr->length); //How much bytes to copy
