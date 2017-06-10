@@ -36,7 +36,9 @@ protected:
 
     const char* getRealPath(int file_id);
     void cacheBlock(const char* path, int blockNumInFile);
-    virtual int blockNumToRemove() = 0;
+    virtual int blockNumToUseAlogo() = 0;
+
+
     int findBlock(const char* path, int blockNumInFile);
 
 
@@ -48,6 +50,8 @@ public:
     void addFile(const char *filePath, int id);
     void removeFile(int id);
     int readFile(int file_id, void *buf, size_t count, off_t offset);
+    int blockNumToUse();
+
 
 };
 
@@ -58,7 +62,7 @@ private:
 public:
     Cache_LRU(int blocks_num);
     ~Cache_LRU();
-    int blockNumToRemove();
+    int blockNumToUseAlogo();
 
 };
 
@@ -69,7 +73,7 @@ private:
 public:
     Cache_LFU(int blocks_num);
     ~Cache_LFU();
-    int blockNumToRemove();
+    int blockNumToUseAlogo();
 
 };
 
@@ -81,7 +85,7 @@ private:
 public:
     Cache_FBR(int blocks_num, double f_old,double f_new);
     ~Cache_FBR();
-    int blockNumToRemove();
+    int blockNumToUseAlogo();
 
 
 };

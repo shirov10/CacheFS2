@@ -70,7 +70,7 @@ int Cache::findBlock(const char *path, int blockNumInFile) {
 }
 
 void Cache::cacheBlock(const char *path, int blockNumInFile) {
-    int b=blockNumToRemove();
+    int b=blockNumToUse();
 }
 
 int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
@@ -112,6 +112,30 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
 
 }
 
+int Cache::blockNumToUse()
+{
+    auto it = blocks.begin();
+    for(it = blocks.begin(); it != blocks.end(); it++)
+    {
+        Block* block = *it;
+        if (block->isEmpty)
+        {
+            break;
+        }
+    }
+    if (it != blocks.end())
+    {
+        int index = (int)std::distance( this->blocks.begin(), it );
+        return index;
+    }
+    else
+    {
+        return this->blockNumToUseAlogo();
+    }
+
+
+}
+
 
 
 //endregion
@@ -126,7 +150,7 @@ Cache_LRU::Cache_LRU(int blocks_num):Cache(blocks_num)
 Cache_LRU::~Cache_LRU() {
 }
 
-int Cache_LRU::blockNumToRemove()
+int Cache_LRU::blockNumToUseAlogo()
 {
     auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime > b->lastAccessTime; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
@@ -145,7 +169,7 @@ Cache_LFU::Cache_LFU(int blocks_num):Cache(blocks_num){
 Cache_LFU::~Cache_LFU() {
 }
 
-int Cache_LFU::blockNumToRemove()
+int Cache_LFU::blockNumToUseAlogo()
 {
     auto compareFunc = [](Block* a, Block* b) { return a->refCount > b->refCount; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
@@ -166,7 +190,7 @@ Cache_FBR::Cache_FBR(int blocks_num, double f_old,double f_new):Cache(blocks_num
 
 Cache_FBR::~Cache_FBR() {
 }
-int Cache_FBR::blockNumToRemove()
+int Cache_FBR::blockNumToUseAlogo()
 {
 }
 
