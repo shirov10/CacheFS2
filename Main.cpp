@@ -8,7 +8,7 @@
 #include <fcntl.h>
 
 
-int main()
+int main2()
 {
     char buf[4096];
     std::cout << "begin" << std::endl;

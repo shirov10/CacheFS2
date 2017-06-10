@@ -10,7 +10,7 @@
 
 #include <string.h> //for memcpy
 #include <algorithm> ///for min
-#include <ctime>
+#include <sys/time.h>
 #include <assert.h>
 #include <iostream>
 
@@ -48,8 +48,9 @@ Cache::Cache(int blocks_num) {
 Cache::~Cache() {
 
     for(int i = 0; i <(int)blocks.size(); ++i){
-        free((char*)blocks[i]->realPath); //frees the memory that was allocated with malloc
-        free (blocks[i]);
+        //free((char*)blocks[i]->realPath); //frees the memory that was allocated with malloc
+        free(blocks[i]->content);
+        delete blocks[i];
     }
 }
 
@@ -91,12 +92,16 @@ Block* Cache::cacheBlock(int fd, const char *path, int blockNumInFile) {
     blockPtr->isEmpty=false;
     blockPtr->realPath=path;
     blockPtr->refCount=1;
-    blockPtr->lastAccessTime=std::time(nullptr);
     blockPtr->length=read_bytes;
     blockPtr->blockNumInFile=blockNumInFile;
 
-    updateAfterReplaceMent(blockNumInFile);
-    updateAfterAccess(blockNumInFile);
+    timeval tv;
+    gettimeofday(&tv, NULL);
+    blockPtr->lastAccessTime=(long long)(tv.tv_sec) * 1000000 + (long long)(tv.tv_usec); //in microsecs
+
+
+    //updateAfterReplaceMent(b); TODO we dont need it. anyway- if using it- change it for LFU to refCount=1
+    //updateAfterAccess(b);
 
     return blockPtr;
 }
@@ -133,14 +138,20 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
             hitsCounter++;
             std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
             block_ptr=blocks[blockNumInCache];
-            block_ptr->lastAccessTime = std::time(nullptr);
             block_ptr->refCount++;
+
+            timeval tv;
+            gettimeofday(&tv, NULL);
+            block_ptr->lastAccessTime=(long long)(tv.tv_sec) * 1000000 + (long long)(tv.tv_usec); //in milisecs
+
             updateAfterAccess(blockNumInCache);
         }
 
-        bytesToCopy=std::min((int)count-alreadyCopied,block_ptr->length); //How much bytes to copy
-
         offsetInBlock=(i==firstBlock)? (int)offset%blockSize:0;
+
+        bytesToCopy=std::min((int)count-alreadyCopied,block_ptr->length-offsetInBlock); //How much bytes to copy
+
+
 
         //copy memory from the cache to the buffer
         memcpy((char*)buf+alreadyCopied,block_ptr->content+offsetInBlock,(size_t)bytesToCopy);
@@ -170,9 +181,8 @@ int Cache::blockNumToUse()
     {
         return this->blockNumToUseAlogo();
     }
-
-
 }
+
 
 int Cache::printCacheWithComperator(bool(*compareFunc)(Block* a, Block* b), const char* log_path)
 {
@@ -191,7 +201,7 @@ int Cache::printCacheWithComperator(bool(*compareFunc)(Block* a, Block* b), cons
         Block* block = *it;
         if (!block->isEmpty)
         {
-            log_file << block->realPath << block->blockNumInFile << std::endl;
+            log_file << block->realPath << " "<<block->blockNumInFile << std::endl;
         }
     }
 
@@ -214,7 +224,7 @@ Cache_LRU::~Cache_LRU() {
 
 int Cache_LRU::blockNumToUseAlogo()
 {
-    auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime > b->lastAccessTime; };
+    auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime < b->lastAccessTime; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
     int index = (int)std::distance( this->blocks.begin(), it );
     return index;
@@ -233,7 +243,7 @@ void Cache_LRU::updateAfterDelete(int blockNum){}
 
 int Cache_LRU::printCache(const char *log_path)
 {
-    auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime > b->lastAccessTime; };
+    auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime >= b->lastAccessTime; };
     this->printCacheWithComperator(compareFunc, log_path);
 }
 
@@ -251,9 +261,9 @@ Cache_LFU::~Cache_LFU() {
 
 int Cache_LFU::blockNumToUseAlogo()
 {
-    auto compareFunc = [](Block* a, Block* b) { return a->refCount > b->refCount; };
+    auto compareFunc = [](Block* a, Block* b) { return a->refCount < b->refCount; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
-    int index = std::distance( this->blocks.begin(), it );
+    int index = (int)std::distance( this->blocks.begin(), it );
     return index;
 }
 // TODO implement
@@ -269,7 +279,7 @@ void Cache_LFU::updateAfterDelete(int blockNum){}
 
 int Cache_LFU::printCache(const char *log_path)
 {
-    auto compareFunc = [](Block* a, Block* b) { return a->refCount > b->refCount; };
+    auto compareFunc = [](Block* a, Block* b) { return a->refCount >= b->refCount; };
     this->printCacheWithComperator(compareFunc, log_path);
 }
 //endregion

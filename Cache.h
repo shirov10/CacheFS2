@@ -29,7 +29,7 @@ struct Block{
     char * content;
     bool isEmpty;
     long lastAccessTime;
-    long lastReplacementTime;
+    long long lastReplacementTime; //TODO do we need this?
     unsigned int refCount;
     std::shared_ptr<MetaData> metaData = nullptr;
 
