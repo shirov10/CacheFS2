@@ -243,8 +243,8 @@ Cache_FBR::Cache_FBR(int blocks_num, double f_old,double f_new):Cache(blocks_num
     _f_new=f_new;
     _f_old=f_old;
 
-    newPartitionSize = (int) f_new * blocks_num;
-    oldPartitionSize = (int) f_old * blocks_num;
+    newPartitionSize =  f_new * blocks_num;
+    oldPartitionSize =  f_old * blocks_num;
     middlePartitionSize = blocks_num - (newPartitionSize + oldPartitionSize);
 
 };
@@ -253,25 +253,46 @@ Cache_FBR::~Cache_FBR() {
 }
 int Cache_FBR::blockNumToUseAlogo()
 {
+    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
+    {
+
+        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
+        std::cout << "   " << aMetaData->_blockIndex;
+    }
     std::cout << "blocks info size " << blocks_info.size() << " blocksNum " << blocksNum << std::endl;
     assert(blocks_info.size() == blocksNum);
     assert(blocks_info.size() == blocks.size());
 
-    auto end_it = blocks.end();
-    auto old_partition_begin_iterator = end_it;
-    for (int i = 0; i < oldPartitionSize; i++)
+//    auto end_it = blocks.end();
+//    auto old_partition_begin_iterator = blocks.begin();
+//    for (int i = 0; i < newPartitionSize; i++)
+//    {
+//        old_partition_begin_iterator++;
+//    }
+//    auto compareFunc = [](Block* a, Block* b)
+//    {
+//        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (a->metaData);
+//        std::shared_ptr<FBR_MetaData> bMetaData = std::static_pointer_cast<FBR_MetaData> (b->metaData);
+//        return aMetaData->refCount > bMetaData->refCount;
+//    };
+//    auto it = std::min_element(old_partition_begin_iterator, end_it, compareFunc);
+//    int index = (int) std::distance( this->blocks.begin(), it );
+//    return index;
+
+    auto end_it = blocks_info.end();
+    auto old_partition_begin_iterator = blocks_info.begin();
+    for (int i = 0; i < newPartitionSize; i++)
     {
-        old_partition_begin_iterator--;
+        old_partition_begin_iterator++;
     }
-    auto compareFunc = [](Block* a, Block* b)
+
+    auto compareFunc = [](std::shared_ptr<FBR_MetaData> a, std::shared_ptr<FBR_MetaData> b)
     {
-        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (a->metaData);
-        std::shared_ptr<FBR_MetaData> bMetaData = std::static_pointer_cast<FBR_MetaData> (b->metaData);
-        return aMetaData->refCount > bMetaData->refCount;
+        return a->refCount > b->refCount;
     };
     auto it = std::min_element(old_partition_begin_iterator, end_it, compareFunc);
-    int index = (int) std::distance( this->blocks.begin(), it );
-    return index;
+    std::shared_ptr<FBR_MetaData> tmp = (*it);
+    return tmp->_blockIndex;
 }
 
 void Cache_FBR::updateAfterAccess(int blockNum)
@@ -298,14 +319,12 @@ void Cache_FBR::updateAfterReplaceMent(int blockNum)
 
     if (metaData == nullptr)
     {
-        metaData = std::make_shared<FBR_MetaData>(accessedBlock);
+        metaData = std::make_shared<FBR_MetaData>(accessedBlock, blockNum);
         accessedBlock->metaData = metaData;
     }
     else
     {
-        std::cout << "before remove size is " << blocks_info.size() << std::endl;
         blocks_info.remove(metaData);
-        std::cout << "after remove size is " << blocks_info.size() << std::endl;
     }
     blocks_info.push_front(metaData);
 }
@@ -320,8 +339,8 @@ void Cache_FBR::updateAfterDelete(int blockNum)
     accessedBlock->metaData = nullptr;
 }
 
-MetaData::MetaData(Block *block):_block(block) { }
-FBR_MetaData::FBR_MetaData(Block * block):MetaData(block) { }
+MetaData::MetaData(Block *block, int blockIndex):_block(block), _blockIndex(blockIndex) { }
+FBR_MetaData::FBR_MetaData(Block * block, int blockIndex):MetaData(block, blockIndex)  { }
 //endregion
 
 // region tests

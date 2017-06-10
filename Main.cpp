@@ -12,7 +12,7 @@ int main()
 {
     char buf[4096];
     std::cout << "begin" << std::endl;
-    CacheFS_init(5,FBR,0.4,0.6);
+    CacheFS_init(10,FBR,0.5,0.5);
     int id1=CacheFS_open("/home/shir/Desktop/f1/la");
     int id2=CacheFS_open("/home/shir/Desktop/f1/lala.file");
 

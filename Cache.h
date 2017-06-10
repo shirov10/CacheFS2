@@ -15,10 +15,11 @@ struct Block;
 
 class MetaData
 {
-    const Block* _block;
-
 public:
-    MetaData(Block* block);
+    const Block* _block;
+    const int _blockIndex;
+
+    MetaData(Block* block, int blockIndex);
 };
 
 struct Block{
@@ -114,7 +115,7 @@ class FBR_MetaData : public MetaData
 {
 public:
     int refCount;
-    FBR_MetaData(Block*);
+    FBR_MetaData(Block* block, int blockIndex);;
 };
 
 class Cache_FBR : public Cache{
