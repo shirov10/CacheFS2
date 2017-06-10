@@ -12,10 +12,15 @@
 #include <algorithm> ///for min
 #include <ctime>
 
+#include <unistd.h> //for read
+
+#include <iostream> //TODO delete
+
 // region Block
 
 Block::Block(int blockSize) {
-    content=new char[blockSize];
+    content=(char*)aligned_alloc(blockSize,blockSize);
+    //content=new char[blockSize];
     isEmpty=true;
 }
 
@@ -29,7 +34,7 @@ Cache::Cache(int blocks_num) {
     //get the block size
     struct stat fi;
     stat("/tmp", &fi);
-    blockSize = fi.st_blksize;
+    blockSize = (int)fi.st_blksize;
     blocks= std::vector<Block*>(blocks_num);
     for (int i = 0; i <(int)blocks.size(); ++i) {
         blocks[i]=new Block(blockSize);
@@ -40,7 +45,7 @@ Cache::~Cache() {
 
     for(int i = 0; i <(int)blocks.size(); ++i){
         free((char*)blocks[i]->realPath); //frees the memory that was allocated with malloc
-        delete blocks[i];
+        free (blocks[i]);
     }
 }
 
@@ -62,15 +67,30 @@ const char* Cache::getRealPath(int file_id) {
  */
 int Cache::findBlock(const char *path, int blockNumInFile) {
     for (int i=0; i<(int)blocks.size();++i ){
-        if (!blocks[i]->isEmpty&&strcmp(blocks[i]->realPath,path) && blockNumInFile==blocks[i]->blockNumInFile){
+        if (!blocks[i]->isEmpty && !strcmp(blocks[i]->realPath,path) && blockNumInFile==blocks[i]->blockNumInFile){
             return i;
         }
     }
     return -1;
 }
 
-void Cache::cacheBlock(const char *path, int blockNumInFile) {
+Block* Cache::cacheBlock(int fd, const char *path, int blockNumInFile) {
     int b=blockNumToUse();
+    Block * blockPtr=blocks[b];
+
+    int read_bytes=(int)pread(fd,(void*)blockPtr->content,(size_t)blockSize,(off_t)(blockNumInFile*blockSize));
+
+    if (read_bytes==-1){
+        return nullptr;
+    }
+
+    blockPtr->isEmpty=false;
+    blockPtr->realPath=path;
+    blockPtr->refCount=1;
+    blockPtr->lastAccessTime=std::time(nullptr);
+    blockPtr->length=read_bytes;
+    blockPtr->blockNumInFile=blockNumInFile;
+    return blockPtr;
 }
 
 int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
@@ -94,21 +114,28 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
     for (int i = firstBlock; i <= lastBlock; ++i) {
         blockNumInCache=findBlock(realPath,i);
         if(blockNumInCache==-1){ //meaning the block is not in the cache
-            //TODO cache it
-
-            blockNumInCache=findBlock(realPath,i);
+            std::cout<<"Read from disk. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
+            block_ptr=cacheBlock(file_id,realPath,i);
+            if(block_ptr== nullptr){
+                return -1;
+            }
         }
-        block_ptr=blocks[blockNumInCache];
-        block_ptr->lastAccessTime = std::time(nullptr); //
-        block_ptr->refCount++;
+        else{ //meaning the block was already in the cache
+            std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
+            block_ptr=blocks[blockNumInCache];
+            block_ptr->lastAccessTime = std::time(nullptr);
+            block_ptr->refCount++;
+        }
+
         bytesToCopy=std::min((int)count-alreadyCopied,block_ptr->length); //How much bytes to copy
 
         offsetInBlock=(i==firstBlock)? (int)offset%blockSize:0;
 
         //copy memory from the cache to the buffer
-        memcpy((char*)buf+alreadyCopied,blocks[blockNumInCache]->content+offsetInBlock,bytesToCopy);
+        memcpy((char*)buf+alreadyCopied,block_ptr->content+offsetInBlock,(size_t)bytesToCopy);
         alreadyCopied+=bytesToCopy;
     }
+    return alreadyCopied;
 
 }
 
@@ -154,7 +181,7 @@ int Cache_LRU::blockNumToUseAlogo()
 {
     auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime > b->lastAccessTime; };
     auto it = std::min_element(this->blocks.begin(), this->blocks.end(), compareFunc);
-    int index = std::distance( this->blocks.begin(), it );
+    int index = (int)std::distance( this->blocks.begin(), it );
     return index;
 }
 

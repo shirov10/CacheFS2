@@ -35,7 +35,7 @@ protected:
     //std::map<const char*,std::map<int,int> > filesInfo; // a map of pairs <path, map>, such that this is a map of pairs <block number in file, block number in cache>
 
     const char* getRealPath(int file_id);
-    void cacheBlock(const char* path, int blockNumInFile);
+    Block* cacheBlock(int fd, const char *path, int blockNumInFile);
     virtual int blockNumToUseAlogo() = 0;
 
 
