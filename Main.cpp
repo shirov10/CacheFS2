@@ -12,12 +12,15 @@ int main()
 {
     char buf[4096];
     std::cout << "begin" << std::endl;
-    CacheFS_init(5,LFU,0,0);
+    CacheFS_init(5,FBR,0.4,0.6);
     int id1=CacheFS_open("/home/shir/Desktop/f1/la");
     int id2=CacheFS_open("/home/shir/Desktop/f1/lala.file");
 
     std::cout<<"Opened files"<<std::endl;
 
+
+
+    CacheFS_pread(id1,buf,100,100);
     int read1=CacheFS_pread(id1,(void*)buf,100,5000);
     std::cout << buf << std::endl;
 

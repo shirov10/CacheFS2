@@ -11,6 +11,8 @@
 #include <string.h> //for memcpy
 #include <algorithm> ///for min
 #include <ctime>
+#include <assert.h>
+#include <iostream>
 
 #include <unistd.h> //for read
 
@@ -31,6 +33,7 @@ Block::Block(int blockSize) {
 //region Cache
 
 Cache::Cache(int blocks_num) {
+    blocksNum = blocks_num;
     //get the block size
     struct stat fi;
     stat("/tmp", &fi);
@@ -165,6 +168,9 @@ int Cache::blockNumToUse()
 
 
 
+void Cache::updateAfterAccess(int blockNum){}
+void Cache::updateAfterReplaceMent(int blockNem){}
+void Cache::updateAfterDelete(int blockNum) { }
 //endregion
 
 
@@ -186,6 +192,18 @@ int Cache_LRU::blockNumToUseAlogo()
 }
 
 
+void Cache_LRU::updateAfterAccess(int blockNum)
+{
+    blocks[blockNum]->refCount++;
+}
+void Cache_LRU::updateAfterReplaceMent(int blockNum)
+{
+    blocks[blockNum]->refCount = 0;
+}
+void Cache_LRU::updateAfterDelete(int blockNum){}
+
+
+
 //endregion
 
 //region Cache_LFU
@@ -203,23 +221,122 @@ int Cache_LFU::blockNumToUseAlogo()
     int index = std::distance( this->blocks.begin(), it );
     return index;
 }
-
+// TODO implement
+void Cache_LFU::updateAfterAccess(int blockNum)
+{
+//    blocks[blockNum]->refCount++;
+}
+void Cache_LFU::updateAfterReplaceMent(int blockNum)
+{
+//    blocks[blockNum]->refCount = 0;
+}
+void Cache_LFU::updateAfterDelete(int blockNum){}
 
 
 //endregion
 
+
 //region Cache_FBR
 
-Cache_FBR::Cache_FBR(int blocks_num, double f_old,double f_new):Cache(blocks_num){
+Cache_FBR::Cache_FBR(int blocks_num, double f_old,double f_new):Cache(blocks_num)
+{
     _f_new=f_new;
     _f_old=f_old;
+
+    newPartitionSize = (int) f_new * blocks_num;
+    oldPartitionSize = (int) f_old * blocks_num;
+    middlePartitionSize = blocks_num - (newPartitionSize + oldPartitionSize);
+
 };
 
 Cache_FBR::~Cache_FBR() {
 }
 int Cache_FBR::blockNumToUseAlogo()
 {
+    std::cout << "blocks info size " << blocks_info.size() << " blocksNum " << blocksNum << std::endl;
+    assert(blocks_info.size() == blocksNum);
+    assert(blocks_info.size() == blocks.size());
+
+    auto end_it = blocks.end();
+    auto old_partition_begin_iterator = end_it;
+    for (int i = 0; i < oldPartitionSize; i++)
+    {
+        old_partition_begin_iterator--;
+    }
+    auto compareFunc = [](Block* a, Block* b)
+    {
+        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (a->metaData);
+        std::shared_ptr<FBR_MetaData> bMetaData = std::static_pointer_cast<FBR_MetaData> (b->metaData);
+        return aMetaData->refCount > bMetaData->refCount;
+    };
+    auto it = std::min_element(old_partition_begin_iterator, end_it, compareFunc);
+    int index = (int) std::distance( this->blocks.begin(), it );
+    return index;
 }
 
+void Cache_FBR::updateAfterAccess(int blockNum)
+{
+    Block* accessedBlock = blocks[blockNum];
+    std::shared_ptr<FBR_MetaData> metaData = std::static_pointer_cast<FBR_MetaData> (accessedBlock->metaData);
 
+    assert(metaData != nullptr);
+
+    auto meta_data_iterator = std::find(blocks_info.begin(), blocks_info.end(), metaData);
+    int placeInQueue = (int) std::distance(blocks_info.begin(), meta_data_iterator);
+
+    if (placeInQueue >= newPartitionSize)
+    {
+        metaData->refCount++;
+    }
+}
+void Cache_FBR::updateAfterReplaceMent(int blockNum)
+{
+    Block* accessedBlock = blocks[blockNum];
+    std::shared_ptr<FBR_MetaData> metaData = std::static_pointer_cast<FBR_MetaData> (accessedBlock->metaData);
+
+
+
+    if (metaData == nullptr)
+    {
+        metaData = std::make_shared<FBR_MetaData>(accessedBlock);
+        accessedBlock->metaData = metaData;
+    }
+    else
+    {
+        std::cout << "before remove size is " << blocks_info.size() << std::endl;
+        blocks_info.remove(metaData);
+        std::cout << "after remove size is " << blocks_info.size() << std::endl;
+    }
+    blocks_info.push_front(metaData);
+}
+void Cache_FBR::updateAfterDelete(int blockNum)
+{
+    Block* accessedBlock = blocks[blockNum];
+    std::shared_ptr<FBR_MetaData> metaData = std::static_pointer_cast<FBR_MetaData> (accessedBlock->metaData);
+
+    assert(metaData != nullptr);
+
+    blocks_info.remove(metaData);
+    accessedBlock->metaData = nullptr;
+}
+
+MetaData::MetaData(Block *block):_block(block) { }
+FBR_MetaData::FBR_MetaData(Block * block):MetaData(block) { }
+//endregion
+
+// region tests
+
+
+void Cache::simpletest1(int iterations)
+{
+    for ( int i = 0; i < iterations; i++)
+    {
+        int blockIndex = blockNumToUse();
+        updateAfterReplaceMent(blockIndex);
+        updateAfterAccess(blockIndex);
+        blocks[blockIndex]->isEmpty = false;
+
+        std::cout << blockIndex << std::endl;
+    }
+}
 //endregion

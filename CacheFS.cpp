@@ -41,6 +41,8 @@ int CacheFS_init(int blocks_num, cache_algo_t cache_algo, double f_old , double 
         _cache=new Cache_FBR(blocks_num,f_old,f_new);
     }
 
+//    _cache->simpletest1(10);
+
     return 0;
 
 }
