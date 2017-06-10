@@ -102,3 +102,8 @@ int CacheFS_print_stat (const char *log_path)
 
     return 0;
 }
+
+int CacheFS_print_cache (const char *log_path)
+{
+    _cache->printCache(log_path);
+}

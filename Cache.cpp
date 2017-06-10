@@ -17,6 +17,7 @@
 #include <unistd.h> //for read
 
 #include <iostream> //TODO delete
+#include <fstream>
 
 // region Block
 
@@ -168,7 +169,28 @@ int Cache::blockNumToUse()
 
 }
 
+int Cache::printCacheWithComperator(bool(*compareFunc)(Block* a, Block* b), const char* log_path)
+{
+    std::vector<Block*> sorted_cpy_of_blocks_vector = blocks;
+    std::sort(sorted_cpy_of_blocks_vector.begin(), sorted_cpy_of_blocks_vector.end(), compareFunc);
 
+    std::string path(log_path);
+    std::ofstream log_file(path, std::ios_base::out | std::ios_base::app );
+    if(log_file.fail())
+    {
+        return -1;
+    }
+
+    for (auto it = sorted_cpy_of_blocks_vector.begin(); it != sorted_cpy_of_blocks_vector.end(); it++)
+    {
+        Block* block = *it;
+        if (!block->isEmpty)
+        {
+            log_file << block->realPath << block->blockNumInFile << std::endl;
+        }
+    }
+
+}
 
 void Cache::updateAfterAccess(int blockNum){}
 void Cache::updateAfterReplaceMent(int blockNem){}
@@ -204,6 +226,12 @@ void Cache_LRU::updateAfterReplaceMent(int blockNum)
 }
 void Cache_LRU::updateAfterDelete(int blockNum){}
 
+int Cache_LRU::printCache(const char *log_path)
+{
+    auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime > b->lastAccessTime; };
+    this->printCacheWithComperator(compareFunc, log_path);
+}
+
 
 
 //endregion
@@ -234,7 +262,11 @@ void Cache_LFU::updateAfterReplaceMent(int blockNum)
 }
 void Cache_LFU::updateAfterDelete(int blockNum){}
 
-
+int Cache_LFU::printCache(const char *log_path)
+{
+    auto compareFunc = [](Block* a, Block* b) { return a->refCount > b->refCount; };
+    this->printCacheWithComperator(compareFunc, log_path);
+}
 //endregion
 
 
@@ -265,27 +297,11 @@ int Cache_FBR::blockNumToUseAlogo()
     assert(blocks_info.size() == blocksNum);
     assert(blocks_info.size() == blocks.size());
 
-//    auto end_it = blocks.end();
-//    auto old_partition_begin_iterator = blocks.begin();
-//    for (int i = 0; i < newPartitionSize; i++)
-//    {
-//        old_partition_begin_iterator++;
-//    }
-//    auto compareFunc = [](Block* a, Block* b)
-//    {
-//        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (a->metaData);
-//        std::shared_ptr<FBR_MetaData> bMetaData = std::static_pointer_cast<FBR_MetaData> (b->metaData);
-//        return aMetaData->refCount > bMetaData->refCount;
-//    };
-//    auto it = std::min_element(old_partition_begin_iterator, end_it, compareFunc);
-//    int index = (int) std::distance( this->blocks.begin(), it );
-//    return index;
-
-    auto end_it = blocks_info.end();
-    auto old_partition_begin_iterator = blocks_info.begin();
-    for (int i = 0; i < newPartitionSize; i++)
+    auto end_it = blocks_info.rbegin();
+    auto old_partition_begin_iterator = blocks_info.rbegin();
+    for (int i = 0; i < oldPartitionSize; i++)
     {
-        old_partition_begin_iterator++;
+        end_it++;
     }
 
     auto compareFunc = [](std::shared_ptr<FBR_MetaData> a, std::shared_ptr<FBR_MetaData> b)
@@ -339,6 +355,23 @@ void Cache_FBR::updateAfterDelete(int blockNum)
 
     blocks_info.remove(metaData);
     accessedBlock->metaData = nullptr;
+}
+
+int Cache_FBR::printCache(const char *log_path)
+{
+    std::string path(log_path);
+    std::ofstream log_file(path, std::ios_base::out | std::ios_base::app );
+    if(log_file.fail())
+    {
+        return -1;
+    }
+    std::cout << "number of blocks info " << blocks_info.size() << std::endl;
+    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
+    {
+        std::shared_ptr<FBR_MetaData> metadata = *it;
+        const Block* block = metadata->_block;
+        log_file << block->realPath << block->blockNumInFile << std::endl;
+    }
 }
 
 MetaData::MetaData(Block *block, int blockIndex):_block(block), _blockIndex(blockIndex) { }

@@ -72,6 +72,8 @@ public:
     void removeFile(int id);
     int readFile(int file_id, void *buf, size_t count, off_t offset);
     int blockNumToUse();
+    virtual int printCache(const char *log_path) = 0;
+    int printCacheWithComperator(bool(*f)(Block* a, Block* b), const char* path);
 
     virtual void simpletest1(int iterations);
 
@@ -93,6 +95,8 @@ public:
     virtual void updateAfterReplaceMent(int blockNem) override ;
     virtual void updateAfterDelete(int blockNum) override ;
 
+    virtual int printCache(const char *log_path) override ;
+
 //    virtual void simpletest1(int iterations);
 
 
@@ -110,6 +114,8 @@ public:
     virtual void updateAfterAccess(int blockNum) override ;
     virtual void updateAfterReplaceMent(int blockNem) override ;
     virtual void updateAfterDelete(int blockNum) override ;
+
+    virtual int printCache(const char *log_path) override ;
 
 };
 
@@ -133,6 +139,8 @@ private:
     virtual void updateAfterAccess(int blockNum) override ;
     virtual void updateAfterReplaceMent(int blockNem) override ;
     virtual void updateAfterDelete(int blockNum) override ;
+
+    virtual int printCache(const char *log_path) override ;
 
 public:
     Cache_FBR(int blocks_num, double f_old,double f_new);
