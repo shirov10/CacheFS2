@@ -16,8 +16,8 @@
 
 Block::Block(int blockSize) {
     content=new char[blockSize];
+    isEmpty=true;
 }
-
 
 //endregion
 
@@ -29,13 +29,11 @@ Cache::Cache(int blocks_num) {
     //get the block size
     struct stat fi;
     stat("/tmp", &fi);
+    blockSize = fi.st_blksize;
     blocks= std::vector<Block*>(blocks_num);
     for (int i = 0; i <(int)blocks.size(); ++i) {
         blocks[i]=new Block(blockSize);
     }
-
-
-
 }
 
 Cache::~Cache() {
@@ -52,7 +50,6 @@ void Cache::addFile(const char *filePath, int id) {
 
 void Cache::removeFile(int id) {
     fileIDs.erase(id);
-
 }
 
 const char* Cache::getRealPath(int file_id) {
@@ -65,11 +62,15 @@ const char* Cache::getRealPath(int file_id) {
  */
 int Cache::findBlock(const char *path, int blockNumInFile) {
     for (int i=0; i<(int)blocks.size();++i ){
-        if (strcmp(blocks[i]->realPath,path) && blockNumInFile==blocks[i]->blockNumInFile){
+        if (!blocks[i]->isEmpty&&strcmp(blocks[i]->realPath,path) && blockNumInFile==blocks[i]->blockNumInFile){
             return i;
         }
     }
     return -1;
+}
+
+void Cache::cacheBlock(const char *path, int blockNumInFile) {
+    int b=blockNumToRemove();
 }
 
 int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {

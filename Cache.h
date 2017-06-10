@@ -16,11 +16,13 @@ struct Block{
     int blockNumInFile;
     int length;
     char * content;
+    bool isEmpty;
+    long lastAccessTime;
+    unsigned int refCount;
 
     Block(int blockSize);
 
-    long lastAccessTime;
-    unsigned int refCount;
+
 };
 
 

@@ -72,7 +72,7 @@ int CacheFS_close(int file_id){
 }
 
 int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
-
+    _cache->readFile(file_id,buf,count,offset);
 }
 
 
