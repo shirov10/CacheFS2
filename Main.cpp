@@ -13,22 +13,22 @@ int main()
     char buf[4096];
     std::cout << "begin" << std::endl;
     CacheFS_init(10,FBR,0.5,0.5);
-    int id1=CacheFS_open("/home/shir/Desktop/f1/la");
-    int id2=CacheFS_open("/home/shir/Desktop/f1/lala.file");
+    int id1=CacheFS_open("/home/omri/Desktop/blob");
+    int id2=CacheFS_open("/home/omri/Desktop/blob2");
 
     std::cout<<"Opened files"<<std::endl;
 
 
 
-    CacheFS_pread(id1,buf,100,100);
     int read1=CacheFS_pread(id1,(void*)buf,100,5000);
     std::cout << buf << std::endl;
 
-    int read2=CacheFS_pread(id2,(void*)buf,100,5000);
+    int read2=CacheFS_pread(id2,(void*)buf,100,0);
     std::cout << buf << std::endl;
 
     int read3=CacheFS_pread(id2,(void*)buf,100,8000);
     std::cout << buf << std::endl;
 
+    CacheFS_print_stat("/home/omri/Desktop/log");
 
 }

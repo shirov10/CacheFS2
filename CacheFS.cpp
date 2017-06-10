@@ -13,6 +13,7 @@
 
 //for close
 #include <unistd.h>
+#include <fstream>
 
 
 
@@ -78,3 +79,26 @@ int CacheFS_pread(int file_id, void *buf, size_t count, off_t offset){
 }
 
 
+int CacheFS_print_stat (const char *log_path)
+{
+    std::string path(log_path);
+
+    std::ofstream log_file(path, std::ios_base::out | std::ios_base::app );
+    if(log_file.fail())
+    {
+        return -1;
+    }
+
+    log_file <<  "Hits number: " << _cache->hitsCounter << "." << std::endl;
+    if(log_file.fail())
+    {
+        return -1;
+    }
+    log_file <<  "Misses number: " << _cache->missCounter << "." << std::endl;
+    if(log_file.fail())
+    {
+        return -1;
+    }
+
+    return 0;
+}

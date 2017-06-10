@@ -117,6 +117,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
     for (int i = firstBlock; i <= lastBlock; ++i) {
         blockNumInCache=findBlock(realPath,i);
         if(blockNumInCache==-1){ //meaning the block is not in the cache
+            missCounter++;
             std::cout<<"Read from disk. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
             block_ptr=cacheBlock(file_id,realPath,i);
             if(block_ptr== nullptr){
@@ -124,6 +125,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
             }
         }
         else{ //meaning the block was already in the cache
+            hitsCounter++;
             std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
             block_ptr=blocks[blockNumInCache];
             block_ptr->lastAccessTime = std::time(nullptr);

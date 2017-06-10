@@ -41,6 +41,7 @@ struct Block{
 
 class Cache {
 
+
 protected:
     int blockSize; //TODO add const maybe?
     int blocksNum;
@@ -74,7 +75,8 @@ public:
 
     virtual void simpletest1(int iterations);
 
-
+    int missCounter = 0;
+    int hitsCounter = 0;
 
 };
 
