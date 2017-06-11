@@ -15,6 +15,11 @@
 #include <unistd.h>
 #include <fstream>
 
+//for realpath
+#include <cstdlib>
+
+//for strncmp
+#include <string.h>
 
 
 static Cache *_cache;
@@ -58,8 +63,15 @@ int CacheFS_destroy(){
 
 
 int CacheFS_open(const char *pathname){
+    char * realPath=realpath(pathname,NULL); //checks if the file is under tmp
+    if(strncmp("/tmp", realPath, 4) != 0){
+        free(realPath);
+        return -1;
+    }
+    free(realPath);
+
     int id=open(pathname,O_RDONLY | O_DIRECT | O_SYNC);
-    if(id<0){      //TODO we should support only files under "/tmp"!
+    if(id<0){
         return -1;
     }
     _cache->addFile(std::make_shared<std::string>(pathname),id);
