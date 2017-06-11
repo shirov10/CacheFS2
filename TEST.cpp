@@ -509,7 +509,8 @@ void basicFBR()
         char cacheCorrect[] = "/tmp/FBR2.txt 5\n/tmp/FBR1.txt 9\n/tmp/FBR1.txt 8\n/tmp/FBR1.txt 7\n/tmp/FBR1.txt 6\n"
                               "/tmp/FBR1.txt 5\n/tmp/FBR1.txt 4\n/tmp/FBR1.txt 3\n/tmp/FBR1.txt 2\n/tmp/FBR1.txt 1\n";
 
-        if (strcmp(cacheResults, cacheCorrect)) {ok = false;}
+        if (strcmp(cacheResults, cacheCorrect))
+        {ok = false;}
     }
     resultsFileInput.close();
 
@@ -522,7 +523,8 @@ void basicFBR()
                               "/tmp/FBR2.txt 2\n/tmp/FBR2.txt 1\n/tmp/FBR2.txt 0\n/tmp/FBR1.txt 6\n/tmp/FBR1.txt 5\n"
                               "/tmp/FBR1.txt 4\n/tmp/FBR1.txt 3\n/tmp/FBR1.txt 2\n/tmp/FBR1.txt 1\n/tmp/FBR1.txt 0\n";
         
-        if (strcmp(cacheResults, cacheCorrect)) {ok = false;}
+        if (strcmp(cacheResults, cacheCorrect))
+        {ok = false;}
     }
     resultsFileInput.close();
 
@@ -743,16 +745,16 @@ void stressTest()
 
 }
 
-int main2()
+int main()
 {
     //sanityCheck();
     //doubleOpenClose();
     //offsetTooBig();
     //basicLRU();
     //basicLFU();
-    //basicFBR();
+    basicFBR();
     //readSeveralBlocksAtOnce();
-    stressTest();
+    //stressTest();
 
     return 0;
 }

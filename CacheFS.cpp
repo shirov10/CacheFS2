@@ -71,6 +71,7 @@ int CacheFS_close(int file_id){
         return -1;
     }
     _cache->removeFile(file_id);
+    // TODO FBR run on all blocks of this file and run updateAfterDelete(blockNum)
     return 0;
 }
 

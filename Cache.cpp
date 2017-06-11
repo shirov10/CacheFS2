@@ -18,6 +18,7 @@
 
 #include <iostream> //TODO delete
 #include <fstream>
+#include <stdlib.h>
 
 // region Block
 
@@ -59,7 +60,20 @@ void Cache::addFile(const char *filePath, int id) {
 }
 
 void Cache::removeFile(int id) {
+
+    for (int i = 0; i < blocks.size(); i++)
+    {
+        Block* block_ptr = blocks[i];
+
+        if ( (!block_ptr->isEmpty) && (!strcmp(block_ptr->realPath, getRealPath(id))) ) //TODO
+            //TODO delete getRealPath Output
+        {
+            block_ptr->isEmpty = true;
+            updateAfterDelete(i);
+        }
+    }
     fileIDs.erase(id);
+
 }
 
 const char* Cache::getRealPath(int file_id) {
@@ -140,8 +154,6 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
         offsetInBlock=(i==firstBlock)? (int)offset%blockSize:0;
 
         bytesToCopy = std::max( std::min((int)count-alreadyCopied,block_ptr->length-offsetInBlock), 0); //How much bytes to copy
-        std::cout << "block lengh = " << block_ptr->length << "  offsetInBlock=" << offsetInBlock << std::endl;
-
 
 
         //copy memory from the cache to the buffer
@@ -302,13 +314,21 @@ Cache_FBR::~Cache_FBR() {
 }
 int Cache_FBR::blockNumToUseAlogo()
 {
+    std::cout << " blockNumToUseAlogo() called - printing cache status. block order in "
+            "queue: "
+            "(newest firs)" << std::endl;
     for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
     {
-
         std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
-        std::cout << "   " << aMetaData->_blockIndex;
+        std::cout << "   " << aMetaData->_blockIndex << " ";
     }
-    std::cout << "blocks info size " << blocks_info.size() << " blocksNum " << blocksNum << std::endl;
+    std::cout << "\n refCount: " << std::endl;
+    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
+    {
+        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
+        std::cout << "   " << aMetaData->refCount << " ";
+    }
+//    std::cout << "blocks info size " << blocks_info.size() << " blocksNum " << blocksNum << std::endl;
     assert(blocks_info.size() == blocksNum);
     assert(blocks_info.size() == blocks.size());
 
@@ -321,7 +341,7 @@ int Cache_FBR::blockNumToUseAlogo()
 
     auto compareFunc = [](std::shared_ptr<FBR_MetaData> a, std::shared_ptr<FBR_MetaData> b)
     {
-        return a->refCount > b->refCount;
+        return a->refCount < b->refCount;
     };
     auto it = std::min_element(old_partition_begin_iterator, end_it, compareFunc);
     std::shared_ptr<FBR_MetaData> tmp = (*it);
@@ -342,9 +362,35 @@ void Cache_FBR::updateAfterAccess(int blockNum)
     {
         metaData->refCount++;
     }
+
+
+    // ---------------------------
+    blocks_info.remove(metaData);
+    blocks_info.push_front(metaData);
 }
 void Cache_FBR::updateAfterReplaceMent(int blockNum)
 {
+
+    std::cout << " \n\nupdateAfterReplaceMent() called - printing cache status. block order "
+            "in---------------------------------- "
+            "queue: "
+            "(newest firs)" << std::endl;
+    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
+    {
+        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
+        std::cout << "   " << aMetaData->_blockIndex << " ";
+    }
+    std::cout << "\n refCount: " << std::endl;
+    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
+    {
+        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
+        std::cout << "   " << aMetaData->refCount << " ";
+    }
+    std::cout << "--------------------------------\n\n" << std::endl;
+
+
+
+
     Block* accessedBlock = blocks[blockNum];
     std::shared_ptr<FBR_MetaData> metaData = std::static_pointer_cast<FBR_MetaData> (accessedBlock->metaData);
 
@@ -380,12 +426,12 @@ int Cache_FBR::printCache(const char *log_path)
     {
         return -1;
     }
-    std::cout << "number of blocks info " << blocks_info.size() << std::endl;
+//    std::cout << "number of blocks info " << blocks_info.size() << std::endl;
     for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
     {
         std::shared_ptr<FBR_MetaData> metadata = *it;
         const Block* block = metadata->_block;
-        log_file << block->realPath << block->blockNumInFile << std::endl;
+        log_file << block->realPath << " " << block->blockNumInFile << std::endl;
     }
 }
 
