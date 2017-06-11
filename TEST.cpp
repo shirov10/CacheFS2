@@ -676,7 +676,7 @@ void stressTest()
     int fd1 = CacheFS_open("/tmp/Several1.txt");
     int fd2 = CacheFS_open("/tmp/Several2.txt");
 
-    char data[10*blockSize] = "\0";
+    char data[40960] = "\0";
     for (int i = 0; i<10000; i++)
     {
         CacheFS_pread(fd1, &data, 6*blockSize, 0*blockSize); // read 6 blocks again and again

@@ -16,7 +16,6 @@
 
 #include <unistd.h> //for read
 
-#include <iostream> //TODO delete
 #include <fstream>
 #include <stdlib.h>
 
@@ -61,7 +60,7 @@ void Cache::addFile(const char *filePath, int id) {
 
 void Cache::removeFile(int id) {
 
-    for (int i = 0; i < blocks.size(); i++)
+    for (int i = 0; i < (int)blocks.size(); i++)
     {
         Block* block_ptr = blocks[i];
 
@@ -124,7 +123,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
     //calculate the wanted blocks
     int firstBlock, lastBlock;
     firstBlock=(int)offset/blockSize;
-    lastBlock=((int)offset+(int)count)/blockSize;
+    lastBlock=((int)offset+(int)count)/blockSize-1*(((int)offset+(int)count)%blockSize==0); //if it is a multiple of blocksize- minus 1
 
     //Get the real path of the given file
     const char * realPath=getRealPath(file_id);
@@ -137,7 +136,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
         blockNumInCache=findBlock(realPath,i);
         if(blockNumInCache==-1){ //meaning the block is not in the cache
             missCounter++;
-            std::cout<<"Read from disk. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
+            //std::cout<<"Read from disk. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
             block_ptr=cacheBlock(file_id,realPath,i);
             if(block_ptr== nullptr){
                 return -1;
@@ -145,7 +144,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
         }
         else{ //meaning the block was already in the cache
             hitsCounter++;
-            std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
+            //std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
             block_ptr=blocks[blockNumInCache];
 
             updateAfterAccess(blockNumInCache);
@@ -167,7 +166,7 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
 int Cache::blockNumToUse()
 {
     auto it = blocks.begin();
-    for(it = blocks.begin(); it != blocks.end(); it++)
+    for(; it != blocks.end(); it++)
     {
         Block* block = *it;
         if (block->isEmpty)
@@ -187,7 +186,7 @@ int Cache::blockNumToUse()
 }
 
 
-int Cache::printCacheWithComperator(bool(*compareFunc)(Block* a, Block* b), const char* log_path)
+int Cache::printCacheWithComperator(bool(*compareFunc)(Block* , Block* ), const char* log_path)
 {
     std::vector<Block*> sorted_cpy_of_blocks_vector = blocks;
     std::sort(sorted_cpy_of_blocks_vector.begin(), sorted_cpy_of_blocks_vector.end(), compareFunc);
@@ -207,7 +206,7 @@ int Cache::printCacheWithComperator(bool(*compareFunc)(Block* a, Block* b), cons
             log_file << block->realPath << " "<<block->blockNumInFile << std::endl;
         }
     }
-
+    return 0;
 }
 
 void Cache::updateAfterAccess(int blockNum)
@@ -217,11 +216,12 @@ void Cache::updateAfterAccess(int blockNum)
     gettimeofday(&tv, NULL);
     blocks[blockNum]->lastAccessTime=(long long)(tv.tv_sec) * 1000000 + (long long)(tv.tv_usec); //in microsecs
 }
+
 void Cache::updateAfterReplaceMent(int blockNum)
 {
     blocks[blockNum]->refCount = 0;
 }
-void Cache::updateAfterDelete(int blockNum) { }
+void Cache::updateAfterDelete(int) { }
 //endregion
 
 
@@ -256,7 +256,7 @@ int Cache_LRU::blockNumToUseAlogo()
 int Cache_LRU::printCache(const char *log_path)
 {
     auto compareFunc = [](Block* a, Block* b) { return a->lastAccessTime >= b->lastAccessTime; };
-    this->printCacheWithComperator(compareFunc, log_path);
+    return this->printCacheWithComperator(compareFunc, log_path);
 }
 
 
@@ -292,7 +292,7 @@ int Cache_LFU::blockNumToUseAlogo()
 int Cache_LFU::printCache(const char *log_path)
 {
     auto compareFunc = [](Block* a, Block* b) { return a->refCount >= b->refCount; };
-    this->printCacheWithComperator(compareFunc, log_path);
+    return this->printCacheWithComperator(compareFunc, log_path);
 }
 //endregion
 
@@ -301,12 +301,8 @@ int Cache_LFU::printCache(const char *log_path)
 
 Cache_FBR::Cache_FBR(int blocks_num, double f_old,double f_new):Cache(blocks_num)
 {
-    _f_new=f_new;
-    _f_old=f_old;
-
-    newPartitionSize =  f_new * blocks_num;
-    oldPartitionSize =  f_old * blocks_num;
-    middlePartitionSize = blocks_num - (newPartitionSize + oldPartitionSize);
+    newPartitionSize =  (int)(f_new * blocks_num);
+    oldPartitionSize =  (int)(f_old * blocks_num);
 
 };
 
@@ -315,7 +311,7 @@ Cache_FBR::~Cache_FBR() {
 int Cache_FBR::blockNumToUseAlogo()
 {
 
-    assert(blocks_info.size() == blocksNum);
+    assert((int)blocks_info.size() == blocksNum);
     assert(blocks_info.size() == blocks.size());
 
     auto end_it = blocks_info.rbegin();
@@ -399,25 +395,11 @@ int Cache_FBR::printCache(const char *log_path)
         const Block* block = metadata->_block;
         log_file << block->realPath << " " << block->blockNumInFile << std::endl;
     }
+
+    return 0;
 }
 
 MetaData::MetaData(Block *block, int blockIndex):_block(block), _blockIndex(blockIndex) { }
 FBR_MetaData::FBR_MetaData(Block * block, int blockIndex):MetaData(block, blockIndex)  { }
 //endregion
 
-// region tests
-
-
-void Cache::simpletest1(int iterations)
-{
-    for ( int i = 0; i < iterations; i++)
-    {
-        int blockIndex = blockNumToUse();
-        updateAfterReplaceMent(blockIndex);
-        updateAfterAccess(blockIndex);
-        blocks[blockIndex]->isEmpty = false;
-
-        std::cout << blockIndex << std::endl;
-    }
-}
-//endregion

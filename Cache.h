@@ -28,8 +28,7 @@ struct Block{
     int length;
     char * content;
     bool isEmpty;
-    long lastAccessTime;
-    long long lastReplacementTime; //TODO do we need this?
+    long long lastAccessTime;
     unsigned int refCount;
     std::shared_ptr<MetaData> metaData = nullptr;
 
@@ -75,7 +74,6 @@ public:
     virtual int printCache(const char *log_path) = 0;
     int printCacheWithComperator(bool(*f)(Block* a, Block* b), const char* path);
 
-    virtual void simpletest1(int iterations);
 
     int missCounter = 0;
     int hitsCounter = 0;
@@ -128,11 +126,9 @@ public:
 
 class Cache_FBR : public Cache{
 private:
-    double _f_old;
-    double _f_new;
 
     int newPartitionSize;
-    int middlePartitionSize;
+    //int middlePartitionSize;
     int oldPartitionSize;
 
     std::list<std::shared_ptr<FBR_MetaData>> blocks_info;

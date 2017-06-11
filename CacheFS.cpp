@@ -106,5 +106,5 @@ int CacheFS_print_stat (const char *log_path)
 
 int CacheFS_print_cache (const char *log_path)
 {
-    _cache->printCache(log_path);
+    return _cache->printCache(log_path);
 }
