@@ -62,7 +62,7 @@ int CacheFS_open(const char *pathname){
     if(id<0){      //TODO we should support only files under "/tmp"!
         return -1;
     }
-    _cache->addFile(pathname,id);
+    _cache->addFile(std::make_shared<std::string>(pathname),id);
     return id;
 }
 

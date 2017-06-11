@@ -18,6 +18,8 @@
 
 #include <fstream>
 #include <stdlib.h>
+#include <malloc.h>
+#include <limits.h>
 
 // region Block
 
@@ -54,7 +56,7 @@ Cache::~Cache() {
     }
 }
 
-void Cache::addFile(const char *filePath, int id) {
+void Cache::addFile(std::shared_ptr<std::string> filePath, int id) {
     fileIDs[id]=filePath;
 }
 
@@ -64,7 +66,8 @@ void Cache::removeFile(int id) {
     {
         Block* block_ptr = blocks[i];
 
-        if ( (!block_ptr->isEmpty) && (!strcmp(block_ptr->realPath, getRealPath(id))) ) //TODO
+        if ( (!block_ptr->isEmpty) && (*block_ptr->realPath == *getRealPath(id) ) )
+            //TODO
             //TODO delete getRealPath Output
         {
             block_ptr->isEmpty = true;
@@ -75,24 +78,29 @@ void Cache::removeFile(int id) {
 
 }
 
-const char* Cache::getRealPath(int file_id) {
-    return realpath(fileIDs[file_id], NULL);
+std::shared_ptr<std::string> Cache::getRealPath(int file_id) {
+    char buffer[PATH_MAX];
+    realpath(fileIDs[file_id]->c_str(), buffer);
+    std::shared_ptr<std::string> shared_path = std::make_shared<std::string>(buffer);
+    //free(buffer);
+    return shared_path;
     // please notice that realpath is alocated using maloc, and must be freed!
 }
 
 /**
  * finds the block number blockNumInFile int the cache. If it's not there- returns -1
  */
-int Cache::findBlock(const char *path, int blockNumInFile) {
+int Cache::findBlock(std::shared_ptr<std::string> path, int blockNumInFile) {
     for (int i=0; i<(int)blocks.size();++i ){
-        if (!blocks[i]->isEmpty && !strcmp(blocks[i]->realPath,path) && blockNumInFile==blocks[i]->blockNumInFile){
+        if (!blocks[i]->isEmpty && (*blocks[i]->realPath == *path) &&
+                blockNumInFile==blocks[i]->blockNumInFile){
             return i;
         }
     }
     return -1;
 }
 
-Block* Cache::cacheBlock(int fd, const char *path, int blockNumInFile) {
+Block* Cache::cacheBlock(int fd, std::shared_ptr<std::string> path, int blockNumInFile) {
     int b=blockNumToUse();
     Block * blockPtr=blocks[b];
 
@@ -126,14 +134,14 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
     lastBlock=((int)offset+(int)count)/blockSize-1*(((int)offset+(int)count)%blockSize==0); //if it is a multiple of blocksize- minus 1
 
     //Get the real path of the given file
-    const char * realPath=getRealPath(file_id);
+    std::shared_ptr<std::string> realPath = getRealPath(file_id);
 
     int alreadyCopied=0, blockNumInCache,bytesToCopy, offsetInBlock;
     Block* block_ptr;
 
     //search for the blocks in the cache
     for (int i = firstBlock; i <= lastBlock; ++i) {
-        blockNumInCache=findBlock(realPath,i);
+        blockNumInCache=findBlock(realPath, i);
         if(blockNumInCache==-1){ //meaning the block is not in the cache
             missCounter++;
             //std::cout<<"Read from disk. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
@@ -203,7 +211,7 @@ int Cache::printCacheWithComperator(bool(*compareFunc)(Block* , Block* ), const 
         Block* block = *it;
         if (!block->isEmpty)
         {
-            log_file << block->realPath << " "<<block->blockNumInFile << std::endl;
+            log_file << *block->realPath << " "<<block->blockNumInFile << std::endl;
         }
     }
     return 0;
@@ -393,7 +401,7 @@ int Cache_FBR::printCache(const char *log_path)
     {
         std::shared_ptr<FBR_MetaData> metadata = *it;
         const Block* block = metadata->_block;
-        log_file << block->realPath << " " << block->blockNumInFile << std::endl;
+        log_file << *block->realPath << " " << block->blockNumInFile << std::endl;
     }
 
     return 0;

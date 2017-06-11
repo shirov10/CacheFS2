@@ -23,7 +23,8 @@ public:
 };
 
 struct Block{
-    const char* realPath;
+//    const char* realPath;
+    std::shared_ptr<std::string> realPath;
     int blockNumInFile;
     int length;
     char * content;
@@ -45,15 +46,15 @@ protected:
     int blockSize; //TODO add const maybe?
     int blocksNum;
     std::vector<Block*> blocks;
-    std::map<int,const char*> fileIDs;
+    std::map<int, std::shared_ptr<std::string>> fileIDs;
     //std::map<const char*,std::map<int,int> > filesInfo; // a map of pairs <path, map>, such that this is a map of pairs <block number in file, block number in cache>
 
-    const char* getRealPath(int file_id);
-    Block* cacheBlock(int fd, const char *path, int blockNumInFile);
+    std::shared_ptr<std::string> getRealPath(int file_id);
+    Block* cacheBlock(int fd, std::shared_ptr<std::string> path, int blockNumInFile);
     virtual int blockNumToUseAlogo() = 0;
 
 
-    int findBlock(const char* path, int blockNumInFile);
+    int findBlock(std::shared_ptr<std::string> path, int blockNumInFile);
 
     /*
      * thos methods intends to update the metadata about the block in the cach after any change in it.
@@ -67,7 +68,7 @@ protected:
 public:
     Cache(int blocks_num);
     virtual ~Cache();
-    void addFile(const char *filePath, int id);
+    void addFile(std::shared_ptr<std::string>, int id);
     void removeFile(int id);
     int readFile(int file_id, void *buf, size_t count, off_t offset);
     int blockNumToUse();

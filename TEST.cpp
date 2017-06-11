@@ -36,15 +36,20 @@ void sanityCheck()
 
     char data[11] = "\0";
     CacheFS_pread(fd, &data, 10, 0); // read from beginning of block
-    if (strcmp(data, "TEST TEST ")) {ok = false;}
+    if (strcmp(data, "TEST TEST "))
+    {ok = false;}
     CacheFS_pread(fd, &data, 10, 5*blockSize + 1); // read from middle of block
-    if (strcmp(data, "EST TEST T")) {ok = false;}
+    if (strcmp(data, "EST TEST T"))
+    {ok = false;}
     CacheFS_pread(fd, &data, 10, 5*blockSize + 2); // read from middle of block
-    if (strcmp(data, "ST TEST TE")) {ok = false;}
+    if (strcmp(data, "ST TEST TE"))
+    {ok = false;}
     CacheFS_pread(fd, &data, 10, 5*blockSize + 3); // read from middle of block
-    if (strcmp(data, "T TEST TES")) {ok = false;}
+    if (strcmp(data, "T TEST TES"))
+    {ok = false;}
     CacheFS_pread(fd, &data, 10, 5*blockSize + 4); // read from middle of block
-    if (strcmp(data, " TEST TEST")) {ok = false;}
+    if (strcmp(data, " TEST TEST"))
+    {ok = false;}
 
     eraser.open("/tmp/sanity_test_cache.txt", std::ofstream::out | std::ofstream::trunc);
     eraser.close();
@@ -57,7 +62,8 @@ void sanityCheck()
     if (resultsFileInput.is_open()) {
         resultsFileInput.read(cacheResults, 10000);
 
-        if (strcmp(cacheResults, "/tmp/sanity_test.txt 5\n/tmp/sanity_test.txt 0\n")) {ok = false;}
+        if (strcmp(cacheResults, "/tmp/sanity_test.txt 5\n/tmp/sanity_test.txt 0\n"))
+        {ok = false;}
     }
     resultsFileInput.close();
 
