@@ -90,12 +90,12 @@ int CacheFS_print_stat (const char *log_path)
         return -1;
     }
 
-    log_file <<  "Hits number: " << _cache->hitsCounter << "." << std::endl;
+    log_file <<  "Hits number: " << _cache->hitsCounter << std::endl;
     if(log_file.fail())
     {
         return -1;
     }
-    log_file <<  "Misses number: " << _cache->missCounter << "." << std::endl;
+    log_file <<  "Misses number: " << _cache->missCounter << std::endl;
     if(log_file.fail())
     {
         return -1;
