@@ -91,17 +91,12 @@ Block* Cache::cacheBlock(int fd, const char *path, int blockNumInFile) {
 
     blockPtr->isEmpty=false;
     blockPtr->realPath=path;
-    blockPtr->refCount=1;
     blockPtr->length=read_bytes;
     blockPtr->blockNumInFile=blockNumInFile;
 
-    timeval tv;
-    gettimeofday(&tv, NULL);
-    blockPtr->lastAccessTime=(long long)(tv.tv_sec) * 1000000 + (long long)(tv.tv_usec); //in microsecs
 
-
-    //updateAfterReplaceMent(b); TODO we dont need it. anyway- if using it- change it for LFU to refCount=1
-    //updateAfterAccess(b);
+    updateAfterReplaceMent(b); // TODO we do need it. only for FBR. we can insert LFU, LRU update into it - not nessecery.
+    updateAfterAccess(b);
 
     return blockPtr;
 }
@@ -138,18 +133,14 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
             hitsCounter++;
             std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
             block_ptr=blocks[blockNumInCache];
-            block_ptr->refCount++;
-
-            timeval tv;
-            gettimeofday(&tv, NULL);
-            block_ptr->lastAccessTime=(long long)(tv.tv_sec) * 1000000 + (long long)(tv.tv_usec); //in milisecs
 
             updateAfterAccess(blockNumInCache);
         }
 
         offsetInBlock=(i==firstBlock)? (int)offset%blockSize:0;
 
-        bytesToCopy=std::min((int)count-alreadyCopied,block_ptr->length-offsetInBlock); //How much bytes to copy
+        bytesToCopy = std::max( std::min((int)count-alreadyCopied,block_ptr->length-offsetInBlock), 0); //How much bytes to copy
+        std::cout << "block lengh = " << block_ptr->length << "  offsetInBlock=" << offsetInBlock << std::endl;
 
 
 
@@ -207,8 +198,17 @@ int Cache::printCacheWithComperator(bool(*compareFunc)(Block* a, Block* b), cons
 
 }
 
-void Cache::updateAfterAccess(int blockNum){}
-void Cache::updateAfterReplaceMent(int blockNem){}
+void Cache::updateAfterAccess(int blockNum)
+{
+    blocks[blockNum]->refCount++;
+    timeval tv;
+    gettimeofday(&tv, NULL);
+    blocks[blockNum]->lastAccessTime=(long long)(tv.tv_sec) * 1000000 + (long long)(tv.tv_usec); //in microsecs
+}
+void Cache::updateAfterReplaceMent(int blockNum)
+{
+    blocks[blockNum]->refCount = 0;
+}
 void Cache::updateAfterDelete(int blockNum) { }
 //endregion
 
@@ -231,15 +231,15 @@ int Cache_LRU::blockNumToUseAlogo()
 }
 
 
-void Cache_LRU::updateAfterAccess(int blockNum)
-{
-    blocks[blockNum]->refCount++;
-}
-void Cache_LRU::updateAfterReplaceMent(int blockNum)
-{
-    blocks[blockNum]->refCount = 0;
-}
-void Cache_LRU::updateAfterDelete(int blockNum){}
+//void Cache_LRU::updateAfterAccess(int blockNum)
+//{
+//    blocks[blockNum]->refCount++;
+//}
+//void Cache_LRU::updateAfterReplaceMent(int blockNum)
+//{
+//    blocks[blockNum]->refCount = 0;
+//}
+//void Cache_LRU::updateAfterDelete(int blockNum){}
 
 int Cache_LRU::printCache(const char *log_path)
 {
@@ -267,15 +267,15 @@ int Cache_LFU::blockNumToUseAlogo()
     return index;
 }
 // TODO implement
-void Cache_LFU::updateAfterAccess(int blockNum)
-{
-//    blocks[blockNum]->refCount++;
-}
-void Cache_LFU::updateAfterReplaceMent(int blockNum)
-{
-//    blocks[blockNum]->refCount = 0;
-}
-void Cache_LFU::updateAfterDelete(int blockNum){}
+//void Cache_LFU::updateAfterAccess(int blockNum)
+//{
+////    blocks[blockNum]->refCount++;
+//}
+//void Cache_LFU::updateAfterReplaceMent(int blockNum)
+//{
+////    blocks[blockNum]->refCount = 0;
+//}
+//void Cache_LFU::updateAfterDelete(int blockNum){}
 
 int Cache_LFU::printCache(const char *log_path)
 {

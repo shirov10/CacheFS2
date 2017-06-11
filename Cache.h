@@ -91,9 +91,9 @@ public:
     ~Cache_LRU();
     int blockNumToUseAlogo() override ;
 
-    virtual void updateAfterAccess(int blockNum) override ;
-    virtual void updateAfterReplaceMent(int blockNem) override ;
-    virtual void updateAfterDelete(int blockNum) override ;
+//    virtual void updateAfterAccess(int blockNum) override ;
+//    virtual void updateAfterReplaceMent(int blockNem) override ;
+//    virtual void updateAfterDelete(int blockNum) override ;
 
     virtual int printCache(const char *log_path) override ;
 
@@ -111,9 +111,9 @@ public:
     ~Cache_LFU();
     int blockNumToUseAlogo() override ;
 
-    virtual void updateAfterAccess(int blockNum) override ;
-    virtual void updateAfterReplaceMent(int blockNem) override ;
-    virtual void updateAfterDelete(int blockNum) override ;
+//    virtual void updateAfterAccess(int blockNum) override ;
+//    virtual void updateAfterReplaceMent(int blockNem) override ;
+//    virtual void updateAfterDelete(int blockNum) override ;
 
     virtual int printCache(const char *log_path) override ;
 

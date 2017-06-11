@@ -8,7 +8,7 @@
 #include <fcntl.h>
 
 
-int main2()
+int main()
 {
     char buf[4096];
     std::cout << "begin" << std::endl;
@@ -20,7 +20,7 @@ int main2()
 
 
 
-    int read1=CacheFS_pread(id1,(void*)buf,100,5000);
+    int read1=CacheFS_pread(id1,(void*)buf,100,500);
     std::cout << buf << std::endl;
 
     int read2=CacheFS_pread(id2,(void*)buf,100,5000);

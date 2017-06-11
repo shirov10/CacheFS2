@@ -743,7 +743,7 @@ void stressTest()
 
 }
 
-int main()
+int main2()
 {
     //sanityCheck();
     //doubleOpenClose();
