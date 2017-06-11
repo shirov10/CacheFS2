@@ -314,21 +314,7 @@ Cache_FBR::~Cache_FBR() {
 }
 int Cache_FBR::blockNumToUseAlogo()
 {
-    std::cout << " blockNumToUseAlogo() called - printing cache status. block order in "
-            "queue: "
-            "(newest firs)" << std::endl;
-    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
-    {
-        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
-        std::cout << "   " << aMetaData->_blockIndex << " ";
-    }
-    std::cout << "\n refCount: " << std::endl;
-    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
-    {
-        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
-        std::cout << "   " << aMetaData->refCount << " ";
-    }
-//    std::cout << "blocks info size " << blocks_info.size() << " blocksNum " << blocksNum << std::endl;
+
     assert(blocks_info.size() == blocksNum);
     assert(blocks_info.size() == blocks.size());
 
@@ -370,26 +356,6 @@ void Cache_FBR::updateAfterAccess(int blockNum)
 }
 void Cache_FBR::updateAfterReplaceMent(int blockNum)
 {
-
-    std::cout << " \n\nupdateAfterReplaceMent() called - printing cache status. block order "
-            "in---------------------------------- "
-            "queue: "
-            "(newest firs)" << std::endl;
-    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
-    {
-        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
-        std::cout << "   " << aMetaData->_blockIndex << " ";
-    }
-    std::cout << "\n refCount: " << std::endl;
-    for (auto it = blocks_info.begin(); it != blocks_info.end(); it++)
-    {
-        std::shared_ptr<FBR_MetaData> aMetaData = std::static_pointer_cast<FBR_MetaData> (*it);
-        std::cout << "   " << aMetaData->refCount << " ";
-    }
-    std::cout << "--------------------------------\n\n" << std::endl;
-
-
-
 
     Block* accessedBlock = blocks[blockNum];
     std::shared_ptr<FBR_MetaData> metaData = std::static_pointer_cast<FBR_MetaData> (accessedBlock->metaData);
