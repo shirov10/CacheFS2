@@ -64,6 +64,9 @@ int CacheFS_destroy(){
 
 int CacheFS_open(const char *pathname){
     char * realPath=realpath(pathname,NULL); //checks if the file is under tmp
+    if(realPath==NULL){
+        return -1;
+    }
     if(strncmp("/tmp", realPath, 4) != 0){
         free(realPath);
         return -1;

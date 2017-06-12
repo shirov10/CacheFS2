@@ -61,19 +61,6 @@ void Cache::addFile(std::shared_ptr<std::string> filePath, int id) {
 }
 
 void Cache::removeFile(int id) {
-
-    for (int i = 0; i < (int)blocks.size(); i++)
-    {
-        Block* block_ptr = blocks[i];
-
-        if ( (!block_ptr->isEmpty) && (*block_ptr->realPath == *getRealPath(id) ) )
-            //TODO
-            //TODO delete getRealPath Output
-        {
-            block_ptr->isEmpty = true;
-            updateAfterDelete(i);
-        }
-    }
     fileIDs.erase(id);
 
 }
@@ -116,16 +103,28 @@ Block* Cache::cacheBlock(int fd, std::shared_ptr<std::string> path, int blockNum
     blockPtr->blockNumInFile=blockNumInFile;
 
 
-    updateAfterReplaceMent(b); // TODO we do need it. only for FBR. we can insert LFU, LRU update into it - not nessecery.
+    updateAfterReplaceMent(b);
     updateAfterAccess(b);
 
     return blockPtr;
 }
 
+
+long filesize(const char* filename)
+{
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return (long)in.tellg();
+}
+
+
 int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
 
     if(fileIDs.count(file_id)==0){//meaning the file is not open
         return -1;
+    }
+
+    if((int)count==0||(int)offset<0){
+        return 0;
     }
 
     //calculate the wanted blocks
@@ -141,21 +140,25 @@ int Cache::readFile(int file_id, void *buf, size_t count, off_t offset) {
 
     //search for the blocks in the cache
     for (int i = firstBlock; i <= lastBlock; ++i) {
+        if((double)filesize(realPath.get()->c_str())/blockSize<i){
+            break;
+        }
         blockNumInCache=findBlock(realPath, i);
         if(blockNumInCache==-1){ //meaning the block is not in the cache
-            missCounter++;
-            //std::cout<<"Read from disk. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
+
             block_ptr=cacheBlock(file_id,realPath,i);
             if(block_ptr== nullptr){
                 return -1;
             }
+            missCounter++;
         }
         else{ //meaning the block was already in the cache
-            hitsCounter++;
-            //std::cout<<"Read from cache. File: "<<file_id<<" Block: "<<i<<std::endl; //TODO delete
+
             block_ptr=blocks[blockNumInCache];
 
             updateAfterAccess(blockNumInCache);
+
+            hitsCounter++;
         }
 
         offsetInBlock=(i==firstBlock)? (int)offset%blockSize:0;
